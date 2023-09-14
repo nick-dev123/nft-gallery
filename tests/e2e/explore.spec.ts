@@ -1,23 +1,18 @@
-import { Page, expect, test } from '@playwright/test'
+import { test } from '@playwright/test'
 
 const SORT_SAMPLES = ['blockNumber_DESC', 'updatedAt_ASC']
 
 test.describe('Explore collections', async () => {
   const routes = ['/rmrk/explore/collectibles', '/bsx/explore/collectibles']
 
-  let page: Page
-  test.beforeAll(async ({ browser }) => {
-    page = await browser.newPage()
-  })
-
   for (const route of routes)
-    test(`Collections explore at ${route}`, async () => {
+    test(`Collections explore at ${route}`, async ({ page }) => {
       await page.goto(route)
       await testCollections(page)
     })
 })
 
-const testCollections = async (page: Page) => {
+const testCollections = async (page) => {
   const tabs = await page.getByTestId('tabs')
   await tabs.nth(2).waitFor()
 
@@ -40,19 +35,14 @@ const testCollections = async (page: Page) => {
 test.describe('Explore items', async () => {
   const routes = ['/rmrk/explore/items?page=1', '/bsx/explore/items?page=1']
 
-  let page: Page
-  test.beforeAll(async ({ browser }) => {
-    page = await browser.newPage()
-  })
-
   for (const route of routes)
-    test(`Items explore at ${route}`, async () => {
+    test(`Items explore at ${route}`, async ({ page }) => {
       await page.goto(route)
       await testItems(page)
     })
 })
 
-const testItems = async (page: Page) => {
+const testItems = async (page) => {
   const tabs = await page.getByTestId('tabs')
   await tabs.nth(2).waitFor()
 
@@ -64,13 +54,13 @@ const testItems = async (page: Page) => {
   const inputMin = await expandSearch.getByTestId('input-min')
   await inputMin.type('100')
   const btnApply = await expandSearch.getByTestId('apply')
-  await btnApply.click()
 
-  try {
-    await page.waitForLoadState('networkidle')
-  } catch (error) {
-    console.log(error)
-  }
+  await Promise.all([
+    page.waitForResponse(
+      (resp) => resp.url().includes('squid.subsquid.io') && resp.ok()
+    ),
+    btnApply.click(),
+  ])
 
   const exploreSort = await page.getByTestId('explore-sort')
   await exploreSort.nth(2).click()
